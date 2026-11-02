@@ -1,0 +1,32 @@
+# Entornos, herramientas e instalaciones locales
+.venv/
+.venv312/
+venv/
+.tools/
+node_modules/
+dist/
+.npm-cache/
+.cache/
+
+# Archivos generados por Python y notebooks
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# Configuracion y registros locales
+.env
+.env.*
+!.env.example
+*.log
+.logs/
+
+# Datos locales y artefactos: conservar las carpetas iniciales
+/opiniones-nlp/data/raw/*
+!/opiniones-nlp/data/raw/.gitkeep
+/opiniones-nlp/data/processed/*
+!/opiniones-nlp/data/processed/.gitkeep
+/opiniones-nlp/artifacts/*
+!/opiniones-nlp/artifacts/.gitkeep

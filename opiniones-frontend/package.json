@@ -1,0 +1,19 @@
+{
+  "name": "analizador-opiniones-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check:deps": "node --input-type=module -e \"await import('react'); await import('react-dom/client'); await import('vite'); console.log('Dependencias del frontend disponibles')\""
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "vite": "6.3.5"
+  }
+}

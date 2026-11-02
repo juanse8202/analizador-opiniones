@@ -6,11 +6,13 @@ El proyecto seguirá una organización similar a la del clasificador de tickets:
 
 ## Estado actual
 
-**Paso 1: definición del alcance y documentación inicial, en la rama `docs/alcance`.**
+**Paso 2: configuración del entorno y dependencias, en la rama `chore/entorno`.**
 
-El repositorio contiene las carpetas de NLP, backend y frontend, conservadas mediante archivos `.gitkeep`, y este README. El dataset todavía no está seleccionado. El procesamiento, los modelos, la API, la interfaz y los scripts de ejecución se implementarán en las siguientes etapas.
+La definición del alcance está completada. El proyecto incorpora dependencias de Python y JavaScript, versiones de referencia, reglas de exclusión de Git e instrucciones de instalación. El entorno Python es propio de `opiniones-nlp`; backend y NLP comparten sus dependencias, siguiendo la organización del clasificador de tickets.
 
-Las funciones y decisiones descritas como previstas son objetivos del proyecto. Todavía no hay resultados de entrenamiento, métricas de evaluación ni comandos de instalación o ejecución verificados para esta aplicación.
+El dataset todavía no está seleccionado. El procesamiento, los modelos, la API, la interfaz y el script de inicio se implementarán en las siguientes etapas. Las carpetas de código conservan sus archivos `.gitkeep`.
+
+La instalación de dependencias y las comprobaciones del entorno están verificadas en Windows con PowerShell. Las funciones de clasificación siguen siendo objetivos del proyecto: todavía no hay resultados de entrenamiento ni métricas de evaluación.
 
 ## Finalidad y dominio
 
@@ -99,7 +101,7 @@ Se documentarán la configuración elegida, las versiones utilizadas, la procede
 
 ## Arquitectura y estructura
 
-Tecnologías previstas: **Python y scikit-learn** para modelos; **NLTK y spaCy** para procesamiento en español; **FastAPI** para la API; y **React con Vite** para la interfaz. Las dependencias y sus versiones se fijarán en la etapa de entorno.
+Tecnologías previstas: **Python y scikit-learn** para modelos; **NLTK y spaCy** para procesamiento en español; **FastAPI** para la API; y **React con Vite** para la interfaz. Las dependencias base conservan las versiones del proyecto de tickets. Se fijan en `opiniones-nlp/requirements.txt` y `opiniones-frontend/package.json`; `requirements-eda.txt` añade herramientas de análisis y notebooks. El backend referencia las dependencias de NLP mediante su propio `requirements.txt`.
 
 ```text
 analizador-opiniones/
@@ -115,12 +117,21 @@ analizador-opiniones/
 │   ├── artifacts/        # Pipelines e informes generados
 │   ├── notebooks/        # Análisis exploratorio
 │   ├── docs/             # Documentación técnica y de datos
-│   └── tests/            # Pruebas de datos, NLP y modelos
+│   ├── tests/            # Pruebas de datos, NLP y modelos
+│   ├── requirements.txt  # Dependencias base de NLP y API
+│   └── requirements-eda.txt # Dependencias adicionales de EDA
 ├── opiniones-backend/
 │   ├── api/              # API REST
-│   └── tests/            # Pruebas del backend
+│   ├── tests/            # Pruebas del backend
+│   └── requirements.txt  # Referencia a las dependencias compartidas
 ├── opiniones-frontend/
-│   └── src/              # Interfaz web
+│   ├── src/              # Interfaz web
+│   ├── package.json      # Dependencias y comprobación inicial
+│   ├── package-lock.json # Versiones resueltas
+│   └── .npmrc            # Caché local de npm
+├── .gitignore
+├── .python-version
+├── .node-version
 └── README.md
 ```
 
@@ -138,9 +149,71 @@ La API tendrá como contrato inicial propuesto:
 
 ## Instalación y ejecución
 
-Pendientes del paso `chore/entorno`. Esta etapa define el alcance y no incluye archivos de dependencias, servidores ni script de inicio.
+### Requisitos
 
-Las instrucciones reproducibles de instalación se añadirán al configurar el entorno. Los comandos de entrenamiento y evaluación se documentarán con sus implementaciones; el arranque completo se comprobará al integrar NLP, backend y frontend.
+- **Python 3.12**; versión verificada: **3.12.16**, registrada en `.python-version`.
+- **Node.js 22 o superior**; versión verificada: **24.19.0**, registrada en `.node-version`.
+- **npm**; versión utilizada en la comprobación: **11.17.0**.
+
+Los archivos de versión documentan el entorno; por sí solos no instalan Python ni Node.js. Ejecutar los comandos siguientes desde la raíz `analizador-opiniones`, usando PowerShell.
+
+### Python: entorno propio y dependencias
+
+Si Python 3.12 está registrado en el lanzador de Windows:
+
+```powershell
+py -3.12 -m venv opiniones-nlp/.venv312
+```
+
+En esta copia se preparó una instalación local de Python 3.12.16 en `.tools/python/`, porque el lanzador de Windows solo tenía registrada otra versión. Se puede crear de nuevo el entorno con esa instalación:
+
+```powershell
+& ./.tools/python/cpython-3.12.16-windows-x86_64-none/python.exe -m venv opiniones-nlp/.venv312
+```
+
+En otro equipo, instalar Python 3.12 o utilizar la ruta de su ejecutable para crear el entorno. La instalación local `.tools/` y el entorno `.venv312/` se excluyen de Git; cada equipo prepara los suyos.
+
+Instalar las dependencias base y el modelo lingüístico de spaCy:
+
+```powershell
+& ./opiniones-nlp/.venv312/Scripts/python.exe -m pip install -r opiniones-backend/requirements.txt
+& ./opiniones-nlp/.venv312/Scripts/python.exe -m pip install --no-deps https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
+```
+
+El modelo `es_core_news_sm` permite el procesamiento lingüístico en español. El clasificador de sentimientos se entrenará posteriormente con los datos del nuevo proyecto.
+
+Para preparar también el análisis exploratorio y los notebooks:
+
+```powershell
+& ./opiniones-nlp/.venv312/Scripts/python.exe -m pip install -r opiniones-nlp/requirements-eda.txt
+```
+
+Este archivo incluye las dependencias base y añade versiones fijadas de pandas, matplotlib, ipykernel y sus dependencias. No es necesario activar el entorno para utilizar los comandos con su ruta completa.
+
+### Frontend: instalación de dependencias
+
+```powershell
+Set-Location opiniones-frontend
+npm.cmd ci
+npm.cmd run check:deps
+Set-Location ..
+```
+
+Se mantienen **React 19.1.0** y **Vite 6.3.5**, como en el proyecto de tickets. `package-lock.json` registra las dependencias resueltas y `.npmrc` ubica la caché en `.npm-cache/`, excluida de Git junto con `node_modules/`.
+
+En este paso solo se comprueba que React, React DOM y Vite estén disponibles. Los archivos de la interfaz y sus comandos de desarrollo y compilación se incorporarán en `feat/interfaz`.
+
+### Comprobación del entorno
+
+Después de instalar las dependencias base, el modelo de spaCy y las herramientas de EDA:
+
+```powershell
+& ./opiniones-nlp/.venv312/Scripts/python.exe --version
+& ./opiniones-nlp/.venv312/Scripts/python.exe -m pip check
+& ./opiniones-nlp/.venv312/Scripts/python.exe -c "import sklearn, nltk, spacy, fastapi, uvicorn, pandas, matplotlib, ipykernel; spacy.load('es_core_news_sm'); print('Entorno Python disponible')"
+```
+
+Estas comprobaciones verifican dependencias y carga del modelo lingüístico. Las pruebas de preparación de datos, NLP, modelos y API se añadirán junto con esas implementaciones. El entrenamiento y el arranque completo de la aplicación se documentarán en sus respectivas etapas.
 
 ## Desarrollo por etapas
 
@@ -157,7 +230,7 @@ Las instrucciones reproducibles de instalación se añadirán al configurar el e
 | 9 | `feat/evaluacion-final` | Evaluación independiente y análisis de errores del modelo fijado. |
 | 10 | `chore/entrega` | Inicio integrado, documentación final y comprobación de reproducibilidad. |
 
-Cada etapa se desarrollará en su rama con commits que describan avances reales y revisables. Se integrará en `main` mediante un Pull Request antes de crear la siguiente rama desde la versión actualizada.
+Cada etapa se desarrollará en su rama con commits que describan avances reales y revisables. Se integrará en `main` mediante `git merge` o un Pull Request antes de crear la siguiente rama desde la versión actualizada.
 
 ## Limitaciones y pendientes
 

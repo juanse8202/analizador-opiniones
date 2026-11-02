@@ -1,0 +1,2 @@
+# Compartir el entorno de NLP y API, siguiendo el proyecto de tickets.
+-r ../opiniones-nlp/requirements.txt
