@@ -1,0 +1,10 @@
+{
+  "version": "amazon-cross-split-trigrams-v1",
+  "threshold": "0.85",
+  "character_ngram_size": 3,
+  "normalization": "NFKC, casefold, collapsed whitespace; punctuation and negations preserved",
+  "priority": ["test", "validation", "train"],
+  "action": "exclude_lower_priority_against_retained_higher_priority",
+  "compare_within_split": false,
+  "use_labels_for_decision": false
+}

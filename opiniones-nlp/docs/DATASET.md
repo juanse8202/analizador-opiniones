@@ -53,7 +53,7 @@ Antes de limpiar duplicados, la agrupación produce:
 
 No se altera la distribución del test para equilibrarla artificialmente. Los conteos efectivos posteriores se registran en el manifiesto preparado.
 
-### Resultado de la preparación local
+### Resultado de la primera preparación local (antes de similitudes)
 
 | Partición | Desfavorable | Intermedia | Favorable | Total conservado |
 |---|---:|---:|---:|---:|
@@ -119,4 +119,6 @@ Set-Location opiniones-nlp
 Set-Location ..
 ```
 
-**Pendiente:** revisar similitudes y paráfrasis, consistencia de las valoraciones, idioma real y cobertura de reseñas. El control exacto normalizado no garantiza ausencia de fuga por textos parecidos; `near_duplicates_checked` permanece en `false` en el manifiesto. Falta el EDA, el entrenamiento y la evaluación independiente.
+La auditoría posterior está implementada en `src/data/audit_similarity.py` y documentada en [AUDITORIA_SIMILITUD.md](AUDITORIA_SIMILITUD.md). Lee la primera preparación y genera `data/processed/amazon_three_levels_clean/`; esta es la versión que deben consumir EDA y modelos. El manifiesto original conserva `near_duplicates_checked: false` porque describe una etapa previa; el nuevo manifiesto registra `true` junto con el alcance y umbral exactos de la comprobación.
+
+**Pendiente para el EDA:** revisar consistencia de valoraciones, idioma real y cobertura con entrenamiento y validación. La detección léxica no garantiza ausencia de paráfrasis, ni compara similitudes dentro de cada partición. No se han entrenado modelos ni utilizado el test para seleccionar configuraciones.

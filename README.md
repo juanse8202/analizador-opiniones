@@ -6,11 +6,13 @@ El proyecto sigue la organización del clasificador de tickets: preparación de 
 
 ## Estado actual
 
-**Paso 3 en curso: adaptación de etiquetas y preparación de datos, en la rama `feat/dataset`.**
+**Paso 3 completado: fuente, agrupación de valoraciones, preparación y control de similitud entre particiones.**
+
+La preparación se implementó en `feat/dataset` y su auditoría adicional en `feat/auditoria-dataset`. El siguiente paso es `feat/eda`.
 
 El alcance y el entorno están configurados. Se dispone de Amazon Reviews Multi en español: 200.000 registros originales de entrenamiento, 5.000 de validación y 5.000 de prueba. La opción 1 adoptada agrupa sus cinco niveles en tres categorías de valoración.
 
-El descargador verifica los originales y el preparador genera CSV conservando texto, identificador, etiqueta original y partición. Se aplica un control de duplicados exactos normalizados y se registran exclusiones y huellas. La revisión de similitudes y paráfrasis sigue pendiente.
+El descargador verifica los originales y el preparador genera CSV conservando texto, identificador, etiqueta original y partición. Después se apartan coincidencias entre particiones con Jaccard de trigramas ≥ 0,85. Se registran exclusiones y huellas. Este control léxico puede omitir paráfrasis; no demuestra equivalencia semántica.
 
 El procesamiento NLP para modelado, los clasificadores, la API, la interfaz y el script de inicio corresponden a etapas posteriores. Todavía no hay modelos entrenados ni métricas de clasificación.
 
@@ -69,9 +71,12 @@ Desde la raíz `analizador-opiniones`, usando el entorno del paso 2:
 & ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/download_amazon.py
 & ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/download_amazon.py --offline
 & ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/prepare_dataset.py
+& ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/audit_similarity.py
 ```
 
 El preparador lee los originales de `opiniones-nlp/data/raw/amazon_reviews_multi/es/` y genera `train.csv`, `validation.csv`, `test.csv`, `exclusions.csv` y `manifest.json` en `opiniones-nlp/data/processed/amazon_three_levels/`.
+
+El auditor lee esa primera preparación y produce una nueva versión en `opiniones-nlp/data/processed/amazon_three_levels_clean/`, con los tres CSV, `matches.csv` (identificadores y similitudes, sin textos) y su propio manifiesto. **El EDA y los futuros modelos deben usar esta versión final.** Los resultados y el método se documentan en [Auditoría de similitudes](opiniones-nlp/docs/AUDITORIA_SIMILITUD.md).
 
 El directorio de salida debe ser nuevo. Para repetir la preparación conservando resultados previos:
 
@@ -95,7 +100,9 @@ Se mantienen las particiones de origen, sin mover filas entre ellas ni efectuar 
 
 La prioridad es `test → validation → train`, como criterio de protección de evaluación del proyecto de tickets. Las copias en particiones de menor prioridad se excluyen. Dentro de una partición se conserva la primera copia si las categorías agrupadas coinciden; si el grupo de la partición prioritaria contiene categorías contradictorias, se apartan todas sus copias. Las exclusiones se registran por identificador y motivo, sin mostrar textos de prueba.
 
-**Este control no descarta paráfrasis ni textos similares.** Falta revisar ese riesgo antes de dar por cerrada la preparación del dataset. Tampoco se garantiza que todos los textos del subconjunto sean realmente españoles.
+El control adicional de [similarity_policy.json](opiniones-nlp/data/similarity_policy.json) utiliza Jaccard de conjuntos de trigramas de caracteres con umbral fijo 0,85 y prioridad `test → validation → train`, tomando el proyecto de tickets como referencia. Se excluyen las reseñas similares a filas conservadas de mayor prioridad, sin consultar sus valoraciones. El texto y las etiquetas de las filas conservadas no se modifican. El test de esta ejecución se conserva byte por byte.
+
+**La similitud léxica no cubre todas las paráfrasis ni prueba ausencia de fuga semántica.** No se comparan similitudes dentro de una misma partición. La consistencia entre texto y valoración, el idioma real y la cobertura del dominio se revisarán con entrenamiento y validación durante el EDA; los textos de prueba siguen reservados.
 
 ## Pipeline NLP previsto
 
@@ -132,7 +139,8 @@ analizador-opiniones/
 │   │   ├── processed/    # Datos preparados y particiones
 │   │   ├── templates/    # Plantillas de captura y revisión
 │   │   ├── amazon_source.json # Fuente, revisión y huellas de originales
-│   │   └── label_mapping.json # Regla de agrupación de valoraciones
+│   │   ├── label_mapping.json # Regla de agrupación de valoraciones
+│   │   └── similarity_policy.json # Regla fija de similitud entre particiones
 │   ├── src/
 │   │   ├── data/         # Preparación y validación
 │   │   ├── nlp/          # Procesamiento compartido
@@ -236,7 +244,15 @@ Después de instalar las dependencias base, el modelo de spaCy y las herramienta
 & ./opiniones-nlp/.venv312/Scripts/python.exe -c "import sklearn, nltk, spacy, fastapi, uvicorn, pandas, matplotlib, ipykernel; spacy.load('es_core_news_sm'); print('Entorno Python disponible')"
 ```
 
-Estas comprobaciones verifican dependencias y carga del modelo lingüístico. Las pruebas de preparación de datos, NLP, modelos y API se añadirán junto con esas implementaciones. El entrenamiento y el arranque completo de la aplicación se documentarán en sus respectivas etapas.
+Estas comprobaciones verifican dependencias y carga del modelo lingüístico. Las pruebas de preparación y similitud ya están disponibles:
+
+```powershell
+Set-Location opiniones-nlp
+& ./.venv312/Scripts/python.exe -m pytest -q
+Set-Location ..
+```
+
+Las pruebas de NLP, modelos y API se incorporarán con esas implementaciones. El entrenamiento y el arranque completo se documentarán en sus respectivas etapas.
 
 ## Desarrollo por etapas
 
@@ -244,7 +260,7 @@ Estas comprobaciones verifican dependencias y carga del modelo lingüístico. La
 |---|---|---|
 | 1 | `docs/alcance` | Objetivo, dominio, etiquetas y criterios para casos especiales documentados. |
 | 2 | `chore/entorno` | Dependencias, `.gitignore` e instalación reproducible. |
-| 3 | `feat/dataset` | Fuente documentada, datos validados y particiones preparadas. |
+| 3 | `feat/dataset` + `feat/auditoria-dataset` | Fuente documentada, datos validados, particiones preparadas y control de similitud registrado. |
 | 4 | `feat/eda` | Análisis exploratorio con resultados y conclusiones. |
 | 5 | `feat/preprocesamiento` | Transformaciones NLP implementadas y verificadas. |
 | 6 | `feat/modelos` | Modelos comparados y pipeline seleccionado con métricas. |
