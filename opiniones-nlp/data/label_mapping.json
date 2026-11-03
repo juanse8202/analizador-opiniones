@@ -1,0 +1,15 @@
+{
+  "version": "amazon-three-levels-v1",
+  "target_column": "valuation",
+  "labels": ["desfavorable", "intermedia", "favorable"],
+  "mapping": {
+    "0": "desfavorable",
+    "1": "desfavorable",
+    "2": "intermedia",
+    "3": "favorable",
+    "4": "favorable"
+  },
+  "meaning": "Valoración original agrupada. Intermedia representa el punto medio de la escala y puede incluir opiniones mixtas; no significa ausencia de sentimiento.",
+  "annotation_source": "derived_from_original_rating",
+  "human_sentiment_annotation": false
+}

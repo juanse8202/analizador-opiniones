@@ -1,0 +1,34 @@
+{
+  "dataset": "Multilingual Amazon Reviews Corpus",
+  "download_repository": "mteb/amazon_reviews_multi",
+  "source_url": "https://huggingface.co/datasets/mteb/amazon_reviews_multi",
+  "revision": "c379a6705fec24a2493fa68e011692605f44e119",
+  "language": "es",
+  "selected_for_inspection_on": "2026-11-02",
+  "original_dataset_card": "https://huggingface.co/datasets/defunct-datasets/amazon_reviews_multi",
+  "license_reference": "https://huggingface.co/datasets/mteb/amazon_reviews_multi/blob/c379a6705fec24a2493fa68e011692605f44e119/amazon_reviews_multi.py",
+  "license_summary": "Condiciones propias de Amazon para investigacion academica; prohíben republicacion y uso comercial. La ficha original marca la distribucion original como retirada. La descarga proviene de la copia publica de MTEB.",
+  "label_policy": "Los originales conservan label 0..4; label_mapping.json define la agrupación desfavorable/intermedia/favorable para los CSV preparados.",
+  "files": {
+    "train": {
+      "path": "es/train.jsonl",
+      "bytes": 48675746,
+      "expected_records": 200000,
+      "sha256": "031b005bb5aa09f762f582874722e4cae2647b35ac13363d8717333a9f1a40a4"
+    },
+    "validation": {
+      "path": "es/validation.jsonl",
+      "bytes": 1210776,
+      "expected_records": 5000,
+      "git_blob_sha1": "afd63f7e79b1773bd1ca497e9cfb6cd3c0bf00ce",
+      "sha256": "04931bc57e2195d98b17ce49f02ca06677d23576289ebf2368c8c764be9d35bc"
+    },
+    "test": {
+      "path": "es/test.jsonl",
+      "bytes": 1219684,
+      "expected_records": 5000,
+      "git_blob_sha1": "11c04955ab98e8ea4694bf366e6db7ecf3fc56fb",
+      "sha256": "b087e09b822e56b8ecdfabddea9aed6ab746ed69ed8c6e84cd0e22ceabb6a3a1"
+    }
+  }
+}

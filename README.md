@@ -1,103 +1,124 @@
 # Analizador de opiniones — NLP y Machine Learning
 
-Proyecto académico individual para clasificar **opiniones de clientes escritas en español** como **positivas, negativas o neutrales**. El objetivo es implementar y explicar un pipeline de procesamiento de lenguaje natural, comparar modelos de clasificación e integrar el modelo seleccionado en una aplicación web.
+Proyecto académico individual para clasificar **reseñas de productos en español** como **desfavorables, intermedias o favorables**, utilizando procesamiento de lenguaje natural y comparando Multinomial Naive Bayes y Regresión Logística. Las etiquetas de referencia se obtienen agrupando las valoraciones originales del dataset.
 
-El proyecto seguirá una organización similar a la del clasificador de tickets: preparación de datos, análisis exploratorio, procesamiento NLP, entrenamiento, evaluación, API REST y frontend. La salida prevista será el sentimiento estimado del comentario, las probabilidades de las tres clases y una visualización del procesamiento aplicado.
+El proyecto sigue la organización del clasificador de tickets: preparación de datos, análisis exploratorio, procesamiento NLP, entrenamiento, evaluación, API REST y frontend. La salida prevista será la valoración global estimada del comentario, las probabilidades de las tres clases y una visualización del procesamiento aplicado.
 
 ## Estado actual
 
-**Paso 2: configuración del entorno y dependencias, en la rama `chore/entorno`.**
+**Paso 3 en curso: adaptación de etiquetas y preparación de datos, en la rama `feat/dataset`.**
 
-La definición del alcance está completada. El proyecto incorpora dependencias de Python y JavaScript, versiones de referencia, reglas de exclusión de Git e instrucciones de instalación. El entorno Python es propio de `opiniones-nlp`; backend y NLP comparten sus dependencias, siguiendo la organización del clasificador de tickets.
+El alcance y el entorno están configurados. Se dispone de Amazon Reviews Multi en español: 200.000 registros originales de entrenamiento, 5.000 de validación y 5.000 de prueba. La opción 1 adoptada agrupa sus cinco niveles en tres categorías de valoración.
 
-El dataset todavía no está seleccionado. El procesamiento, los modelos, la API, la interfaz y el script de inicio se implementarán en las siguientes etapas. Las carpetas de código conservan sus archivos `.gitkeep`.
+El descargador verifica los originales y el preparador genera CSV conservando texto, identificador, etiqueta original y partición. Se aplica un control de duplicados exactos normalizados y se registran exclusiones y huellas. La revisión de similitudes y paráfrasis sigue pendiente.
 
-La instalación de dependencias y las comprobaciones del entorno están verificadas en Windows con PowerShell. Las funciones de clasificación siguen siendo objetivos del proyecto: todavía no hay resultados de entrenamiento ni métricas de evaluación.
+El procesamiento NLP para modelado, los clasificadores, la API, la interfaz y el script de inicio corresponden a etapas posteriores. Todavía no hay modelos entrenados ni métricas de clasificación.
 
 ## Finalidad y dominio
 
-El caso de uso inicial comprende **comentarios de clientes sobre productos y servicios de una empresa genérica**: satisfacción con un producto, calidad de atención, experiencia de compra o entrega. Este dominio orienta la primera versión; en la etapa de datos se concretará su cobertura según la fuente elegida y se documentará cualquier ajuste del alcance.
+El dominio inicial comprende reseñas de productos y experiencias de compra, entrega y atención asociadas. La unidad de análisis es el texto completo de cada reseña en español.
 
-La unidad de análisis será un comentario completo en español. Se buscará reconocer la valoración expresada en el texto para facilitar la revisión de opiniones y ofrecer una demostración del funcionamiento del pipeline NLP.
+El objetivo específico es **estimar la categoría de valoración que acompaña al texto**. La supervisión procede de la escala original del cliente; los comentarios no han recibido una nueva anotación humana de sentimientos.
 
-La primera versión propondrá una sola etiqueta global por comentario. Los casos con valoraciones contradictorias, contexto insuficiente o significado incierto tendrán criterios de revisión específicos.
+El alcance general de clasificación de opiniones se mantiene, con una definición operacional basada en valoraciones. Las futuras métricas medirán acuerdo con esas valoraciones agrupadas y no demostrarán, por sí solas, reconocimiento de todos los matices emocionales del texto.
 
 ## Etiquetas y criterios de clasificación
 
-| Etiqueta | Criterio operacional inicial | Ejemplo ilustrativo |
-|---|---|---|
-| `positivo` | Expresa una valoración favorable, satisfacción o recomendación. | «La atención fue excelente y resolvieron mi consulta rápidamente». |
-| `negativo` | Expresa una valoración desfavorable, insatisfacción o crítica. | «El producto llegó roto y la atención fue pésima». |
-| `neutral` | Describe información del dominio sin expresar una valoración favorable o desfavorable identificable. | «El paquete contiene dos unidades y un manual». |
+La política reproducible está en [label_mapping.json](opiniones-nlp/data/label_mapping.json).
 
-Los ejemplos de este README son **ilustrativos**; no constituyen un dataset ni resultados del modelo. Las etiquetas se asignarán considerando el significado del comentario completo. Una palabra aislada, la ausencia de palabras positivas o una puntuación de tres estrellas no determinan automáticamente una etiqueta neutral.
+| `label` original | Etiqueta `valuation` | Definición |
+|---|---|---|
+| `0` o `1` | `desfavorable` | Agrupa los dos niveles inferiores de valoración. |
+| `2` | `intermedia` | Representa el punto medio de la escala original. |
+| `3` o `4` | `favorable` | Agrupa los dos niveles superiores de valoración. |
+
+**Intermedia no significa ausencia de sentimiento.** Puede incluir satisfacción parcial, críticas moderadas u opiniones mixtas. Los registros se agrupan por su valoración original, aunque el contenido del texto pueda discrepar con ella.
 
 ### Opiniones mixtas y casos especiales
 
-| Caso | Tratamiento previsto |
-|---|---|
-| «La comida estuvo excelente, pero la atención fue pésima». | Registrar como opinión mixta y apartar para revisión; no convertir automáticamente a `neutral`. |
-| «El empaque es sencillo, pero el producto funciona muy bien; lo recomiendo». | Permitir `positivo` cuando la conclusión global favorable sea clara y se confirme en la revisión. |
-| «No estoy satisfecho con el servicio». | Considerar la negación y el sentido de insatisfacción; conservar esta información durante el procesamiento. |
-| «Hola», texto vacío, solo espacios o caracteres sin contenido interpretable. | Validar la entrada y solicitar un comentario suficiente, sin forzar una de las tres clases. |
-| Sarcasmo, ironía, referencias incompletas o texto fuera del dominio. | Marcar para revisión cuando no pueda establecerse una interpretación consistente. |
-| Emojis o signos expresivos. | Evaluar cómo conservar su información antes de definir la normalización. |
+- Una reseña como «El producto funciona bien, pero la batería dura poco» puede tener distintas valoraciones según su autor. Durante la preparación conserva la categoría que corresponde a su etiqueta original; no se reetiqueta automáticamente por palabras del texto.
+- La valoración original puede contener ruido o contradicciones con el comentario. Se revisarán muestras de entrenamiento y validación, documentando desacuerdos sin convertir las etiquetas derivadas en supuestas anotaciones humanas.
+- Las negaciones, emojis y signos expresivos pueden aportar información para estimar la valoración. Su tratamiento se evaluará en la fase de NLP.
+- Los saludos, entradas vacías, texto insuficiente y mensajes fuera del dominio requerirán validación y reglas de aclaración que se implementarán en fases posteriores.
+- La detección automática de sarcasmo o ambigüedad no está implementada. Cualquier umbral de confianza requerirá experimentación.
 
-En la preparación del dataset, se asignará una de las tres etiquetas únicamente cuando exista una valoración global clara o una descripción neutral identificable. Los casos mixtos sin orientación dominante se conservarán aparte, con el motivo de revisión, y se contabilizarán en el informe de datos. Esta separación limita la cobertura del clasificador y deberá reflejarse en la evaluación.
-
-La primera versión no incorpora una cuarta clase de sentimiento mixto. La detección automática de ambigüedad y las reglas para solicitar aclaración deberán implementarse y evaluarse antes de afirmarlas como comportamiento disponible. No se fijará un umbral de confianza sin experimentación.
+La definición anterior de `positivo`, `negativo` y `neutral` se sustituye por esta política. La primera versión tampoco predice una categoría específica de sentimiento mixto ni clasifica aspectos por separado.
 
 ## Alcance funcional previsto
 
-- Preparar un dataset de opiniones en español con etiquetas y procedencia documentadas.
-- Explorar la distribución de clases, las longitudes, los términos frecuentes, los faltantes y los duplicados.
+- Preparar y documentar datos de reseñas en español, con procedencia y valoración de referencia.
+- Analizar distribución de clases, longitudes, términos frecuentes, faltantes y duplicados.
 - Implementar y comparar alternativas de procesamiento de texto.
-- Entrenar Multinomial Naive Bayes y Regresión Logística, y justificar la selección del modelo.
+- Comparar Multinomial Naive Bayes y Regresión Logística, y justificar el modelo seleccionado.
 - Guardar el pipeline completo para aplicar las mismas transformaciones en entrenamiento e inferencia.
-- Ofrecer una API REST para consultar predicciones, métricas y estado del modelo.
-- Crear una interfaz web para ingresar un comentario y visualizar el sentimiento, las probabilidades estimadas y las trazas de procesamiento.
-- Verificar el comportamiento con pruebas y documentar resultados, errores y limitaciones.
+- Ofrecer una API REST para predicciones, métricas y estado del modelo.
+- Crear una interfaz para ingresar un comentario y mostrar valoración estimada, probabilidades y trazas de procesamiento.
+- Verificar el comportamiento con pruebas y documentar errores y limitaciones.
 
-Quedan fuera de esta primera versión el análisis de sentimiento por aspecto —por ejemplo, comida y atención por separado—, el análisis multilingüe, la integración con redes sociales y la respuesta automática a clientes. La carga masiva de comentarios y el seguimiento histórico podrán considerarse como ampliaciones posteriores.
+Quedan fuera de esta versión el análisis por aspecto, la clasificación multilingüe, la integración con redes sociales y la respuesta automática a clientes. La carga masiva y el seguimiento histórico podrán considerarse posteriormente.
 
-## Datos y protocolo inicial
+## Datos y preparación
 
-La selección del dataset se realizará en la rama `feat/dataset`. Antes de incorporarlo se documentarán su autor, fuente, licencia, idioma, versión o fecha de obtención, campos disponibles y compatibilidad con las tres etiquetas.
+La fuente es **Amazon Reviews Multi, subconjunto español (`es`), desde la copia pública de MTEB**. La revisión, procedencia y condiciones documentadas se describen en [Dataset](opiniones-nlp/docs/DATASET.md). Las huellas de los originales están en [amazon_source.json](opiniones-nlp/data/amazon_source.json).
 
-Se propone el siguiente esquema mínimo para los datos preparados:
+La ficha original del corpus indica que su distribución fue retirada. Se registra explícitamente la copia utilizada y sus condiciones de investigación académica. Los originales, los CSV y los manifiestos generados permanecen locales y excluidos de Git.
+
+Desde la raíz `analizador-opiniones`, usando el entorno del paso 2:
+
+```powershell
+& ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/download_amazon.py
+& ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/download_amazon.py --offline
+& ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/prepare_dataset.py
+```
+
+El preparador lee los originales de `opiniones-nlp/data/raw/amazon_reviews_multi/es/` y genera `train.csv`, `validation.csv`, `test.csv`, `exclusions.csv` y `manifest.json` en `opiniones-nlp/data/processed/amazon_three_levels/`.
+
+El directorio de salida debe ser nuevo. Para repetir la preparación conservando resultados previos:
+
+```powershell
+& ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/prepare_dataset.py --output-dir opiniones-nlp/data/processed/amazon_three_levels_v2
+```
+
+Esquema de los CSV:
 
 | Campo | Contenido |
 |---|---|
-| `text` | Comentario original que se analizará. |
-| `sentiment` | Una de las etiquetas `positivo`, `negativo` o `neutral`. |
-| `source` | Procedencia del comentario, vinculada a la documentación de la fuente. |
+| `id` | Identificador original. |
+| `text` | Texto original, conservado sin aplicar NLP. |
+| `valuation` | `desfavorable`, `intermedia` o `favorable`. |
+| `original_label` | Etiqueta original de `0` a `4`. |
+| `source` | Repositorio de procedencia. |
+| `language` | Subconjunto de origen: `es`. |
+| `original_split` | Partición original: `train`, `validation` o `test`. |
 
-El esquema definitivo, los identificadores y los metadatos de revisión se concretarán al conocer el dataset. Los ejemplos públicos, los escritos por personas para el proyecto y los generados con asistencia de IA mantendrán una procedencia diferenciada. Las etiquetas y los casos dudosos se revisarán y se registrarán las decisiones tomadas.
+Se mantienen las particiones de origen, sin mover filas entre ellas ni efectuar un nuevo muestreo. Para detectar duplicados se usa NFKC, minúsculas mediante `casefold` y espacios colapsados, conservando puntuación y negaciones. Esta normalización se utiliza únicamente para comparar textos.
 
-La preparación deberá separar entrenamiento, validación y prueba antes de ajustar el vectorizador o seleccionar modelos. Se controlarán duplicados y similitudes entre particiones; sus limitaciones deberán quedar documentadas. Si existen grupos relacionados, como variantes del mismo comentario, se evaluará una separación por grupo para evitar contaminación entre conjuntos.
+La prioridad es `test → validation → train`, como criterio de protección de evaluación del proyecto de tickets. Las copias en particiones de menor prioridad se excluyen. Dentro de una partición se conserva la primera copia si las categorías agrupadas coinciden; si el grupo de la partición prioritaria contiene categorías contradictorias, se apartan todas sus copias. Las exclusiones se registran por identificador y motivo, sin mostrar textos de prueba.
 
-La evaluación humana complementaria usará comentarios independientes. Si sus resultados sirven para modificar el modelo, se necesitarán otros comentarios reservados para la evaluación posterior. El conjunto de prueba final se mantendrá apartado de la selección de configuraciones.
+**Este control no descarta paráfrasis ni textos similares.** Falta revisar ese riesgo antes de dar por cerrada la preparación del dataset. Tampoco se garantiza que todos los textos del subconjunto sean realmente españoles.
 
 ## Pipeline NLP previsto
 
-1. **Normalización:** definir el tratamiento de mayúsculas, Unicode, tildes, números, URLs, puntuación y emojis, justificando el efecto sobre el sentimiento.
+1. **Normalización:** evaluar mayúsculas, Unicode, tildes, números, URLs, puntuación y emojis, justificando su efecto sobre la predicción de valoración.
 2. **Tokenización:** separar el texto en unidades y revisar casos frecuentes del dominio.
-3. **Stop words:** evaluar su retirada conservando negaciones relevantes, como `no`, `nunca` y `sin`.
-4. **Stemming y lematización:** implementar ambas alternativas y comparar su efecto.
-5. **N-gramas y TF-IDF:** comparar unigramas frente a unigramas y bigramas, y registrar los parámetros del vectorizador.
-6. **Clasificación:** entrenar y comparar los modelos utilizando el mismo procedimiento de evaluación.
+3. **Stop words:** evaluar su retirada conservando negaciones relevantes.
+4. **Stemming y lematización:** implementar ambas alternativas y comparar sus resultados.
+5. **N-gramas y TF-IDF:** comparar unigramas frente a unigramas y bigramas.
+6. **Clasificación:** comparar los modelos con el mismo procedimiento de evaluación.
 
-El pipeline seleccionado se serializará junto con el procesamiento y el clasificador. El backend reutilizará ese pipeline y sus trazas para evitar diferencias entre entrenamiento, predicción y visualización.
+El pipeline seleccionado se guardará completo. La API reutilizará sus transformaciones y trazas para mantener el mismo procesamiento que en entrenamiento.
 
 ## Modelos y evaluación previstos
 
-Se compararán **Multinomial Naive Bayes** y **Regresión Logística**. La selección considerará F1 macro, resultados por clase, matriz de confusión y análisis de errores. También se informará la exactitud, diferenciándola del F1 macro.
+Se compararán **Multinomial Naive Bayes** y **Regresión Logística**, usando F1 macro, métricas por clase, matriz de confusión, exactitud y análisis de errores. Los resultados representarán acuerdo con la valoración original agrupada.
 
-La comparación utilizará validación cruzada sobre entrenamiento, con semilla registrada. El número de particiones y los hiperparámetros se definirán cuando se conozcan el volumen y la distribución de los datos. TF-IDF se ajustará dentro de cada partición de entrenamiento de la validación cruzada.
+La selección de configuraciones utilizará entrenamiento y validación; TF-IDF se ajustará dentro de cada partición de entrenamiento de la validación cruzada. El test se mantiene reservado para evaluar el modelo fijado. Su lectura durante la preparación sirve para comprobar integridad y bloquear duplicados, sin evaluar predicciones ni mostrar sus textos.
 
-Se documentarán la configuración elegida, las versiones utilizadas, la procedencia de los datos y la correspondencia entre el modelo guardado y sus informes. Las probabilidades se presentarán como estimaciones del clasificador; cualquier afirmación sobre su calibración requerirá una evaluación específica.
+La agrupación produce una distribución inicial aproximada de 40 % desfavorable, 20 % intermedia y 40 % favorable. El manifiesto preparado registra los conteos efectivos tras las exclusiones; no se equilibra artificialmente el test.
 
-**No hay un modelo seleccionado ni métricas disponibles en esta etapa.** Los resultados del clasificador de tickets corresponden a otra tarea y no describen el rendimiento del analizador de opiniones.
+Una evaluación humana complementaria deberá documentar sus criterios y la diferencia entre juicio sobre el texto y valoración original del cliente. Las probabilidades se presentarán como estimaciones del clasificador; cualquier afirmación de calibración requerirá evaluación específica.
+
+**No hay un modelo seleccionado ni métricas disponibles en esta etapa.** Los resultados del clasificador de tickets corresponden a otra tarea.
 
 ## Arquitectura y estructura
 
@@ -109,7 +130,9 @@ analizador-opiniones/
 │   ├── data/
 │   │   ├── raw/          # Datos originales
 │   │   ├── processed/    # Datos preparados y particiones
-│   │   └── templates/    # Plantillas de captura y revisión
+│   │   ├── templates/    # Plantillas de captura y revisión
+│   │   ├── amazon_source.json # Fuente, revisión y huellas de originales
+│   │   └── label_mapping.json # Regla de agrupación de valoraciones
 │   ├── src/
 │   │   ├── data/         # Preparación y validación
 │   │   ├── nlp/          # Procesamiento compartido
@@ -143,7 +166,7 @@ La API tendrá como contrato inicial propuesto:
 
 | Endpoint | Responsabilidad prevista |
 |---|---|
-| `POST /predict` | Recibir un comentario y devolver sentimiento, probabilidades estimadas y trazas de procesamiento. |
+| `POST /predict` | Recibir un comentario y devolver valoración agrupada, probabilidades estimadas y trazas de procesamiento. |
 | `GET /metrics` | Consultar las métricas del modelo y la comparación de configuraciones disponibles. |
 | `GET /health` | Informar el estado de la API y la disponibilidad del modelo. |
 
@@ -180,7 +203,7 @@ Instalar las dependencias base y el modelo lingüístico de spaCy:
 & ./opiniones-nlp/.venv312/Scripts/python.exe -m pip install --no-deps https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
 ```
 
-El modelo `es_core_news_sm` permite el procesamiento lingüístico en español. El clasificador de sentimientos se entrenará posteriormente con los datos del nuevo proyecto.
+El modelo `es_core_news_sm` permite el procesamiento lingüístico en español. El clasificador de valoraciones agrupadas se entrenará posteriormente con los datos del nuevo proyecto.
 
 Para preparar también el análisis exploratorio y los notebooks:
 
@@ -234,9 +257,9 @@ Cada etapa se desarrollará en su rama con commits que describan avances reales 
 
 ## Limitaciones y pendientes
 
-- Concretar el dominio según el dataset seleccionado y revisar la consistencia de sus etiquetas.
+- Revisar el dominio y la correspondencia entre textos y valoraciones agrupadas.
 - Analizar desbalance, ruido, similitudes y representatividad de los comentarios.
 - Medir las dificultades con negaciones, sarcasmo, opiniones mixtas y mensajes fuera del dominio.
 - Implementar validaciones y comprobar los casos en que corresponde solicitar aclaración.
-- Mantener una evaluación independiente y explicar el alcance real de las métricas obtenidas.
+- Mantener una evaluación independiente y explicar que las métricas miden valoraciones agrupadas.
 - Completar cada fase antes de presentar sus funciones como disponibles.
