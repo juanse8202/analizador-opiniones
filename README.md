@@ -6,9 +6,9 @@ El proyecto sigue la organización del clasificador de tickets: preparación de 
 
 ## Estado actual
 
-**Paso 3 completado: fuente, agrupación de valoraciones, preparación y control de similitud entre particiones.**
+**Paso 4 implementado: análisis exploratorio reproducible, gráficos, muestra de revisión y conclusiones.**
 
-La preparación se implementó en `feat/dataset` y su auditoría adicional en `feat/auditoria-dataset`. El siguiente paso es `feat/eda`.
+La preparación se implementó en `feat/dataset`, su auditoría en `feat/auditoria-dataset` y el EDA en `feat/eda`. El siguiente paso es `feat/preprocesamiento`.
 
 El alcance y el entorno están configurados. Se dispone de Amazon Reviews Multi en español: 200.000 registros originales de entrenamiento, 5.000 de validación y 5.000 de prueba. La opción 1 adoptada agrupa sus cinco niveles en tres categorías de valoración.
 
@@ -103,6 +103,24 @@ La prioridad es `test → validation → train`, como criterio de protección de
 El control adicional de [similarity_policy.json](opiniones-nlp/data/similarity_policy.json) utiliza Jaccard de conjuntos de trigramas de caracteres con umbral fijo 0,85 y prioridad `test → validation → train`, tomando el proyecto de tickets como referencia. Se excluyen las reseñas similares a filas conservadas de mayor prioridad, sin consultar sus valoraciones. El texto y las etiquetas de las filas conservadas no se modifican. El test de esta ejecución se conserva byte por byte.
 
 **La similitud léxica no cubre todas las paráfrasis ni prueba ausencia de fuga semántica.** No se comparan similitudes dentro de una misma partición. La consistencia entre texto y valoración, el idioma real y la cobertura del dominio se revisarán con entrenamiento y validación durante el EDA; los textos de prueba siguen reservados.
+
+## Análisis exploratorio (paso 4)
+
+El EDA sigue la organización del notebook de tickets y utiliza **199.581 reseñas de entrenamiento y 4.996 de validación** de la versión final, sin abrir `test.csv` ni entrenar modelos.
+
+```powershell
+& ./opiniones-nlp/.venv312/Scripts/python.exe opiniones-nlp/src/data/explore_dataset.py
+```
+
+Genera tablas, cinco gráficos, huellas y una muestra local en `opiniones-nlp/artifacts/eda/`. Si esa carpeta existe, usar `--output-dir opiniones-nlp/artifacts/eda_v2` para conservarla.
+
+- [Notebook de EDA](opiniones-nlp/notebooks/01_eda_opiniones.ipynb): tablas y gráficos agregados; seleccionar el entorno Python del proyecto en VS Code.
+- [Informe y conclusiones](opiniones-nlp/docs/EDA.md): distribución cercana a 40/20/40, longitudes, términos por valoración, señales de revisión y decisiones para NLP.
+- `review_sample.csv`: 47 reseñas distintas, incluidas 30 aleatorias por clase y conjunto. Los campos para revisión humana se generan vacíos; las observaciones asistidas del informe son preliminares.
+
+Se comprobaron cero campos vacíos y cero duplicados exactos normalizados dentro de entrenamiento y validación o compartidos entre ellos. Las negaciones aparecen en las tres categorías; las señales léxicas no identifican automáticamente sentimientos, idiomas ni errores de valoración.
+
+Los textos y CSV generados permanecen fuera de Git. Se versionan código, pruebas, notebook sin outputs, informe y gráficos agregados. Las instrucciones para copiar y completar la muestra sin alterar los resultados reproducibles están en el informe.
 
 ## Pipeline NLP previsto
 
@@ -244,7 +262,7 @@ Después de instalar las dependencias base, el modelo de spaCy y las herramienta
 & ./opiniones-nlp/.venv312/Scripts/python.exe -c "import sklearn, nltk, spacy, fastapi, uvicorn, pandas, matplotlib, ipykernel; spacy.load('es_core_news_sm'); print('Entorno Python disponible')"
 ```
 
-Estas comprobaciones verifican dependencias y carga del modelo lingüístico. Las pruebas de preparación y similitud ya están disponibles:
+Estas comprobaciones verifican dependencias y carga del modelo lingüístico. Las pruebas de preparación, similitud y EDA ya están disponibles:
 
 ```powershell
 Set-Location opiniones-nlp
@@ -274,7 +292,7 @@ Cada etapa se desarrollará en su rama con commits que describan avances reales 
 ## Limitaciones y pendientes
 
 - Revisar el dominio y la correspondencia entre textos y valoraciones agrupadas.
-- Analizar desbalance, ruido, similitudes y representatividad de los comentarios.
+- Profundizar la revisión humana del ruido y la representatividad; el desbalance y las señales exploratorias ya están documentados en el EDA.
 - Medir las dificultades con negaciones, sarcasmo, opiniones mixtas y mensajes fuera del dominio.
 - Implementar validaciones y comprobar los casos en que corresponde solicitar aclaración.
 - Mantener una evaluación independiente y explicar que las métricas miden valoraciones agrupadas.
