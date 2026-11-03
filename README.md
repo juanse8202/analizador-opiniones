@@ -116,7 +116,7 @@ Genera tablas, cinco gráficos, huellas y una muestra local en `opiniones-nlp/ar
 
 - [Notebook de EDA](opiniones-nlp/notebooks/01_eda_opiniones.ipynb): tablas y gráficos agregados; seleccionar el entorno Python del proyecto en VS Code.
 - [Informe y conclusiones](opiniones-nlp/docs/EDA.md): distribución cercana a 40/20/40, longitudes, términos por valoración, señales de revisión y decisiones para NLP.
-- `review_sample.csv`: 47 reseñas distintas, incluidas 30 aleatorias por clase y conjunto. Los campos para revisión humana se generan vacíos; las observaciones asistidas del informe son preliminares.
+- `review_sample.csv`: plantilla reproducible de 47 reseñas, incluidas 30 aleatorias por clase y conjunto. Se completó su copia local `review_annotations.csv`, con responsable identificado como IA y notas por reseña. El [informe de revisión asistida](opiniones-nlp/docs/REVISION_EDA.md) registra resultados y límites; la evaluación humana independiente sigue prevista para el paso 9.
 
 Se comprobaron cero campos vacíos y cero duplicados exactos normalizados dentro de entrenamiento y validación o compartidos entre ellos. Las negaciones aparecen en las tres categorías; las señales léxicas no identifican automáticamente sentimientos, idiomas ni errores de valoración.
 

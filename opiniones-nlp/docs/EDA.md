@@ -131,7 +131,7 @@ La inspección exploratoria asistida de esta muestra encontró:
 - Abreviaturas, faltas de tildes, mayúsculas, signos repetidos y símbolos. Normalizar indiscriminadamente puede perder información o unir expresiones distintas.
 - Los casos seleccionados por ausencia de stop words seguían siendo textos españoles breves o telegráficos. Los dos fragmentos marcados como parecidos a HTML correspondían a una expresión entre signos y a la notación de una tecla. Estas señales producen falsos positivos y no deben convertirse directamente en reglas de eliminación.
 
-La revisión anterior es una **inspección asistida preliminar**, no una evaluación humana independiente ni una medición de acuerdo entre anotadores. No establece tasas de ruido ni valida el idioma de todo el corpus. Los campos del CSV permanecen vacíos para que el responsable realice y registre su propia revisión.
+La revisión anterior es una **inspección asistida preliminar**, no una evaluación humana independiente ni una medición de acuerdo entre anotadores. Se completó una copia local `review_annotations.csv` con los cuatro campos y notas individuales de las 47 reseñas, identificando a Codex como revisor IA. El [informe de revisión asistida](REVISION_EDA.md) registra criterios y conteos: 39 compatibles, 6 ambiguas, 1 candidata de discrepancia y 1 insuficiente. No establece tasas de ruido ni valida el idioma de todo el corpus. `review_sample.csv` conserva los campos vacíos como plantilla original; la evaluación humana independiente corresponde al paso 9.
 
 Para hacerlo sin modificar el archivo reproducible:
 
